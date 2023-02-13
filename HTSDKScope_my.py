@@ -27,7 +27,7 @@ class Oscilloscope(object):
         
         self.LeverPos = [0, 0, 0, 0]
         
-        self.TimeDIV = 21; 
+        self.TimeDIV = 15 #21; 
         self.YTFormat = 0; 
 
         class STRUCT_Control(Structure):
@@ -53,6 +53,7 @@ class Oscilloscope(object):
         self.stControl.nAlreadyReadLen = 0
         self.stControl.nALT = 0
         
+        self.nTriggerCouple = 1
         self.DisLen = 2500; 
         self.StartNew = True
             #stControl.nALT = 0
@@ -141,7 +142,7 @@ class Oscilloscope(object):
             return False
 
     def HTSetSampleRate(self):
-        retval = self.marchdll.dsoHTSetSampleRate(0, 0, byref(self.rcRelayControl), byref(self.stControl))
+        retval = self.marchdll.dsoHTSetSampleRate(0, self.YTFormat, byref(self.rcRelayControl), byref(self.stControl))
         if not retval:
             return False
         elif retval == 1:
@@ -152,7 +153,7 @@ class Oscilloscope(object):
             return False
 
     def HTSetCHAndTrigger(self):
-        retval = self.marchdll.dsoHTSetCHAndTrigger(0, byref(self.rcRelayControl), 21)
+        retval = self.marchdll.dsoHTSetCHAndTrigger(0, byref(self.rcRelayControl), self.stControl.nTimeDiv)
         if not retval:
             return False
         elif retval == 1:
@@ -163,7 +164,7 @@ class Oscilloscope(object):
             return False
 
     def HTSetRamAndTrigerControl(self):
-        retval = self.marchdll.dsoHTSetRamAndTrigerControl(0, 21, 7, 0, 0)
+        retval = self.marchdll.dsoHTSetRamAndTrigerControl(0, self.stControl.nTimeDiv, self.stControl.nCHSet, self.stControl.nTriggerSource, 0)
         if not retval:
             return False
         elif retval == 1:
@@ -174,10 +175,9 @@ class Oscilloscope(object):
             return False
     
     def HTSetCHPos(self):
-        retval = self.marchdll.dsoHTSetCHPos(0, 8, 0, 0, 4)
-        retval = self.marchdll.dsoHTSetCHPos(0, 8, 0, 1, 4)
-        retval = self.marchdll.dsoHTSetCHPos(0, 8, 0, 2, 4)
-        retval = self.marchdll.dsoHTSetCHPos(0, 8, 0, 3, 4)
+        for i in range(0,3):
+            retval = self.marchdll.dsoHTSetCHPos(0, self.rcRelayControl.nCHVoltDIV[i], self.LeverPos[i], i, 4)
+        
         if not retval:
             return False
         elif    retval == 1:
@@ -188,7 +188,7 @@ class Oscilloscope(object):
             return False
         
     def HTSetVTriggerLevel(self):
-        retval = self.marchdll.dsoHTSetVTriggerLevel(0, 0, 4)
+        retval = self.marchdll.dsoHTSetVTriggerLevel(0, self.LeverPos[0], 4)
         if not retval:
             return False
         elif retval == 1:
@@ -200,7 +200,7 @@ class Oscilloscope(object):
             
     def HTSetTrigerMode(self):
         if (self.TriggerMode == 0):
-            retval = self.marchdll.dsoHTSetTrigerMode(0, 0, 0, 0)
+            retval = self.marchdll.dsoHTSetTrigerMode(0, self.TriggerMode, self.stControl.nTriggerSlope, self.nTriggerCouple)
             if not retval:
                 return False
             elif retval == 1:
