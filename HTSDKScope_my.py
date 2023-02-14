@@ -11,7 +11,7 @@ import numpy as np
 
 # Set the directory for your HantekScope DLL here.
 marchdll_file = os.path.join("Dll_x64", "HTHardDll.dll")
-#marchdll_file = os.path.join("Dll_x32", "HTHardDll.dll")
+marchdll_file_graph = os.path.join("Dll_x64", "HTDisplayDll.dll")
 
 class Oscilloscope(object):
     def __init__(self, scopeid=0):  # Set up our scope. The scope id is for each scope attached to the system.
@@ -21,14 +21,15 @@ class Oscilloscope(object):
 
         # self.marchdll = ctypes.CDLL(marchdll_file) #WinDLL(marchdll_file)
         self.marchdll = ctypes.CDLL(marchdll_file) #WinDLL(marchdll_file)
-        
+        self.marchdll_graph = ctypes.CDLL(marchdll_file_graph)
+
         self.scopeid = c_ushort(scopeid)
         self.scop_id = np.array(self.scopeid, ctypes.c_ushort)
         
         self.LeverPos = [0, 0, 0, 0]
         
-        self.TimeDIV = 15 #21; 
-        self.YTFormat = 0; 
+        self.TimeDIV = 21
+        self.YTFormat = 0
 
         class STRUCT_Control(Structure):
             _fields_ = [("nCHSet", c_int16),
@@ -56,15 +57,7 @@ class Oscilloscope(object):
         self.nTriggerCouple = 1
         self.DisLen = 2500; 
         self.StartNew = True
-            #stControl.nALT = 0
-        '''
-        self.rcRelayControl = {'bCHEnable': [],  'nCHVoltDIV': [], 'nCHCoupling': [], 'bCHBWLimit': [], 'nTrigSource': self.stControl['nTriggerSource'], 'bTrigFilt': 0, 'nALT': self.stControl["nALT"]}
-        for i in range(0,3):
-            self.rcRelayControl['bCHEnable'[i]] = 1
-            self.rcRelayControl['nCHVoltDIV'[i]] = 8
-            self.rcRelayControl['nCHCoupling'[i]] = 0 
-            self.rcRelayControl['bCHBWLimit'[i]] = 0
-        '''
+      
         class STRUCT_RelayControl(Structure):
             _fields_ = [("bCHEnable", c_int32 * 4),
                         ("nCHVoltDIV", c_int16 * 4),
@@ -95,10 +88,7 @@ class Oscilloscope(object):
         self.CH2SrcData = (c_short * 4096)()
         self.CH3SrcData = (c_short * 4096)()
         self.CH4SrcData = (c_short * 4096)()   
-        self.pAmpLevel = np.zeros(579)
-        for i in range(0, 578):
-            self.pAmpLevel[i] = 1024
-
+        
         self.cal_data = None
 
     def is_attached(self):
@@ -276,11 +266,13 @@ class Oscilloscope(object):
             return data_ch1, data_ch2, data_ch3, data_ch4,[j / 1e6 for j in range(0, data_points)], t_index
         else:
             for i in range (0, 4096):
-                self.CH1SrcData[i] = data_ch1[i] - (255 - self.LeverPos[0])
-                self.CH2SrcData[i] = data_ch2[i] - (255 - self.LeverPos[1])
-                self.CH3SrcData[i] = data_ch3[i] - (255 - self.LeverPos[2])
-                self.CH4SrcData[i] = data_ch4[i] - (255 - self.LeverPos[3])
+                self.CH1SrcData[i] = data_ch1[i] #- (255 - self.LeverPos[0])
+                self.CH2SrcData[i] = data_ch2[i] #- (255 - self.LeverPos[1])
+                self.CH3SrcData[i] = data_ch3[i] #- (255 - self.LeverPos[2])
+                self.CH4SrcData[i] = data_ch4[i] #- (255 - self.LeverPos[3])
 
     def GetDataFromDSO(self):
         t_index = c_ulong(0)
         return self.CH1SrcData, self.CH2SrcData, self.CH3SrcData, self.CH4SrcData, [j / 1e6 for j in range(0, 4096)], t_index
+
+  

@@ -40,9 +40,11 @@ if __name__ == "__main__":
     fig, ax = plt.subplots(figsize=(6, 4))
     fig.set_facecolor('gray')
     ax.set_facecolor('white')
-    ax.set_xlim([-100, 5000])
+    ax.set_xlim([0, 4095])
     ax.set_ylim([-270, 270])
-    line, = ax.plot([], [], lw=3)
+    
+    ax.autoscale_view(False, False, False)
+    line, = ax.plot([], [], lw=30)
 
    
 
@@ -77,5 +79,5 @@ if __name__ == "__main__":
     
 
 
-    ani = animation.FuncAnimation(fig, animate, interval=100)
+    ani = animation.FuncAnimation(fig, animate, interval=50)
     plt.show()
