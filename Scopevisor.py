@@ -1,8 +1,6 @@
 import time
-
 import matplotlib.backends
 import matplotlib
-
 matplotlib.use('Qt5Agg') 
 import numpy as np
 import matplotlib.pylab as plt
@@ -11,7 +9,13 @@ print(rcsetup.all_backends)
 from matplotlib.figure import Figure
 import matplotlib.animation as animation
 from HTSDKScope_my import Oscilloscope
-from collections import deque
+from collections import deque        
+from PIL import Image
+import ctypes
+import os
+import matplotlib.transforms as transforms
+import conversions, utils
+import matplotlib.ticker as ticker
 
 if __name__ == "__main__":
     #['GTK3Agg', 'GTK3Cairo', 'GTK4Agg', 'GTK4Cairo', 'MacOSX', 'nbAgg', 'QtAgg', 'QtCairo', 'Qt5Agg', 'Qt5Cairo', 'TkAgg', 
@@ -29,55 +33,63 @@ if __name__ == "__main__":
     scope0.HTSetCHPos()
     scope0.HTSetVTriggerLevel()
     scope0.HTSetTrigerMode()
-    
+    timebase = conversions.TIMEBASE[30]
+    timebase_str = utils.format_number(timebase, "s")
+    seconds_per_sample = 1 / 23
+    time = np.arange(0, float(23))
+    time *= seconds_per_sample
 
-    #scope0.set_voltage_division(1, 5)
-    #print(scope0.set_sampling_rate(26))
-    #scope0.setup_dso_cal_level()
-    #plt.ion()
- 
-    
-    fig, ax = plt.subplots(figsize=(6, 4))
-    fig.set_facecolor('gray')
-    ax.set_facecolor('white')
-    ax.set_xlim([0, 4095])
-    ax.set_ylim([-270, 270])
-    
-    ax.autoscale_view(False, False, False)
-    line, = ax.plot([], [], lw=30)
+    # Darkmode to simulate oscilloscope
+    plt.style.use('dark_background')
+    fig, ax = plt.subplots()
 
-   
+    # Setup the graph like an oscilloscope graticule
+    ax.set_ylim(-100, 100)
+    ax.xaxis.set_major_locator(ticker.MultipleLocator(timebase))
+    ax.xaxis.set_major_formatter(ticker.NullFormatter())
+    ax.xaxis.set_minor_locator(ticker.MultipleLocator(timebase / 5))
+    ax.yaxis.set_major_formatter(ticker.NullFormatter())
+    ax.grid(which="major", axis="both", color="0.5")
+    ax.grid(which="minor", axis="both", color="0.2")
+    ax.minorticks_on()
 
     def animate(i):
         length = 4096
         scope0.CollectData()
         data = scope0.GetDataFromDSO()
         tIndex = data[5].value
-       
-        #x.append(x[-1] + 1)  # update data
-        #y.append(y[-1] + dy)
-        y = data[1][:length]
-        x = data[4][tIndex:tIndex + length]
-        #line.set_data(x, y)
-        ax.clear()
-        ax.plot(x,y)
-        '''
-        ax.relim()  # update axes limits
-        ax.autoscale_view(True, True, True)
-        return line, ax
-        '''
-        #data = scope0.read_data_from_scope(data_points=4096)#3000)
-        #pylab.plot(data[0][:length], data[0][tIndex:tIndex + length])  # , 'r-')
-        #ax.plot(data[1][:length], data[0][tIndex:tIndex + length])
-        #pylab.plot(data[2][:length], data[0][tIndex:tIndex + length])
-        #pylab.plot(data[3][:length], data[0][tIndex:tIndex + length])
-        #plt.draw()
-        #plt.show()
-        #time.sleep(1)
+        ytrans = transforms.blended_transform_factory(ax.get_yticklabels()[0].get_transform(), ax.transData)
+        
+        vpd = conversions.VOLTS_PER_DIV[12]
+        vpd_str = utils.format_number(vpd * (10 ** 1), "V")
+        col = conversions.CHANNEL_COLOUR[1]
+        ax.plot(data[4][tIndex:tIndex + length], data[2], color=col, label=f"Ch2: {vpd_str}")
+        ax.axhline(y=-20, color=col, lw=0.8, ls="-")
     
-    
-    
+        vpd = conversions.VOLTS_PER_DIV[12]
+        vpd_str = utils.format_number(vpd * (10 ** 1), "V")
+        col = conversions.CHANNEL_COLOUR[2]
+        ax.plot(data[4][tIndex:tIndex + length], data[3], color=col, label=f"Ch3: {vpd_str}")
+        ax.axhline(y=20, color=col, lw=0.8, ls="-")
 
+        vpd = conversions.VOLTS_PER_DIV[12]
+        vpd_str = utils.format_number(vpd * (10 ** 1), "V")
+        col = conversions.CHANNEL_COLOUR[3]
+        ax.plot(data[4][tIndex:tIndex + length], data[4], color=col, label=f"Ch4: {vpd_str}")
+        ax.axhline(y=40, color=col, lw=0.8, ls="-")
+
+        # Trigger line
+        trigger_level = 0
+        trigger_channel = 0
+        col = conversions.CHANNEL_COLOUR[trigger_channel]
+        ax.axhline(y=trigger_level, color=col, lw=0.8, ls="-")
+        ax.text(0, trigger_level, "T", color=col, transform=ytrans, ha="right", va="center")
+
+        # Timebase Text
+        samples_per_second = utils.format_number(1)
+        sampling_depth = utils.format_number(1)
+        plt.title(f"Timebase: {timebase_str}, {samples_per_second}Sa/s, {sampling_depth}Pt")
+        ax.legend()
 
     ani = animation.FuncAnimation(fig, animate, interval=50)
     plt.show()
