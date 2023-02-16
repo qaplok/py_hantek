@@ -1,3 +1,4 @@
+!!!-=NOT WORK, under maintenance=-!!!
 # py_hantek
 Small programm migrate from Delphi pascal to python.
 Just a part of my big automation project.
