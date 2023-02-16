@@ -64,7 +64,9 @@ if __name__ == "__main__":
         data = scope0.GetDataFromDSO()
         tIndex = data[5].value
         ytrans = transforms.blended_transform_factory(ax.get_yticklabels()[0].get_transform(), ax.transData)
-        
+        vpp2 = data[6]
+        vpp3 = data[7]
+        vpp4 = data[8]
         #vpd = conversions.VOLTS_PER_DIV[12]
         #vpd_str = utils.format_number(vpd * (10 ** 1), "V")
         
@@ -72,18 +74,18 @@ if __name__ == "__main__":
         #ax.axhline(y=-20, color=col, lw=0.8, ls="-")
     
         #vpd = conversions.VOLTS_PER_DIV[12]
-        #vpd_str = utils.format_number(vpd * (10 ** 1), "V")
+        vpd_str2 = utils.format_number(vpp2 , "A")
         
-        ax.plot(data[4][tIndex:tIndex + length], data[1][tIndex:tIndex + length], color=conversions.CHANNEL_COLOUR[1]) #, label=f"Ch3: {vpd_str}")
+        ax.plot(data[4][tIndex:tIndex + length], data[1][tIndex:tIndex + length], color=conversions.CHANNEL_COLOUR[1], label=f"Ch2: {vpd_str2}")
         #ax.axhline(y=20, color=col, lw=0.8, ls="-")
 
         #vpd = conversions.VOLTS_PER_DIV[12]
-        #vpd_str = utils.format_number(vpd * (10 ** 1), "V")
+        vpd_str3 = utils.format_number(vpp3, "A")
         
-        ax.plot(data[4][tIndex:tIndex + length], data[2][tIndex:tIndex + length], color=conversions.CHANNEL_COLOUR[2]) #, label=f"Ch4: {vpd_str}")
+        ax.plot(data[4][tIndex:tIndex + length], data[2][tIndex:tIndex + length], color=conversions.CHANNEL_COLOUR[2], label=f"Ch3: {vpd_str3}")
         #ax.axhline(y=40, color=col, lw=0.8, ls="-")
-        
-        ax.plot(data[4][tIndex:tIndex + length], data[3][tIndex:tIndex + length], color=conversions.CHANNEL_COLOUR[3]) #, label=f"Ch4: {vpd_str}")
+        vpd_str4 = utils.format_number(vpp4 , "A")
+        ax.plot(data[4][tIndex:tIndex + length], data[3][tIndex:tIndex + length], color=conversions.CHANNEL_COLOUR[3], label=f"Ch4: {vpd_str4}")
         # Trigger line
         #trigger_level = 0
         #trigger_channel = 1
@@ -95,7 +97,7 @@ if __name__ == "__main__":
         samples_per_second = utils.format_number(1)
         sampling_depth = utils.format_number(1)
         plt.title(f"Timebase: {timebase_str}, {samples_per_second}Sa/s, {sampling_depth}Pt")
-        #ax.legend()
+        ax.legend()
         
 
     ani = animation.FuncAnimation(fig, animate, interval=10)

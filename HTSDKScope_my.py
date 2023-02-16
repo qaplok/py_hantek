@@ -268,6 +268,49 @@ class Oscilloscope(object):
 
     def GetDataFromDSO(self):
         t_index = c_ulong(0)
-        return self.CH1SrcData, self.CH2SrcData, self.CH3SrcData, self.CH4SrcData, [j / 1e6 for j in range(0, 4097)], t_index
+        koef =0.96
+        PPromMin = self.CH3SrcData[0]
+        PPromMax = PPromMin
+        for i in range (0, 4096):
+            if self.CH3SrcData[i] < PPromMin:
+                PPromMin = self.CH3SrcData[i]
+            if self.CH3SrcData[i] > PPromMax:
+                PPromMax = self.CH3SrcData[i]
+        P3Min = PPromMin
+        P3Max = PPromMax
+        if P3Min < 0:
+            meas_vpp3 = ((P3Max + abs(P3Min)) / koef) / 2
+        else:
+            meas_vpp3 =((P3Max - P3Min) / koef) / 2
+        
+        PPromMin = self.CH2SrcData[0]
+        PPromMax = PPromMin
+        for i in range (0, 4096):
+            if self.CH2SrcData[i] < PPromMin:
+                PPromMin = self.CH2SrcData[i]
+            if self.CH2SrcData[i] > PPromMax:
+                PPromMax = self.CH2SrcData[i]
+        P2Min = PPromMin
+        P2Max = PPromMax
+        if P2Min < 0:
+            meas_vpp2 = ((P2Max + abs(P2Min)) / koef) / 2
+        else:
+            meas_vpp2 =((P2Max - P2Min) / koef) / 2
+
+        PPromMin = self.CH4SrcData[0]
+        PPromMax = PPromMin
+        for i in range (0, 4096):
+            if self.CH4SrcData[i] < PPromMin:
+                PPromMin = self.CH4SrcData[i]
+            if self.CH4SrcData[i] > PPromMax:
+                PPromMax = self.CH4SrcData[i]
+        P4Min = PPromMin
+        P4Max = PPromMax
+        if P4Min < 0:
+            meas_vpp4 = ((P4Max + abs(P4Min)) / koef) / 2
+        else:
+            meas_vpp4 =((P4Max - P4Min) / koef) / 2
+
+        return self.CH1SrcData, self.CH2SrcData, self.CH3SrcData, self.CH4SrcData, [j / 1e6 for j in range(0, 4097)], t_index, meas_vpp2, meas_vpp3, meas_vpp4
 
   
