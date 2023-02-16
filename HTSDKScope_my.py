@@ -26,7 +26,7 @@ class Oscilloscope(object):
         self.scopeid = c_ushort(scopeid)
         self.scop_id = np.array(self.scopeid, ctypes.c_ushort)
         
-        self.LeverPos = [128, 128, 128, 128]
+        self.LeverPos = [0, -50, 0, 50]
         
         self.TimeDIV = 21  #6-2V/div , 21- 10V/div
         self.YTFormat = c_int16(0) #0-normal, 1-scan, 2-roll
@@ -259,8 +259,6 @@ class Oscilloscope(object):
         
         if retval == -1:
             return None
-        elif raw_data:
-            return data_ch1, data_ch2, data_ch3, data_ch4,[j / 1e6 for j in range(0, data_points+1)], t_index
         else:
             for i in range (0, 4096):
                 self.CH1SrcData[i] = data_ch1[i] - (255 - self.LeverPos[0])

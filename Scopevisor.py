@@ -54,11 +54,13 @@ if __name__ == "__main__":
     ax.grid(which="major", axis="both", color="0.5")
     ax.grid(which="minor", axis="both", color="0.2")
     ax.minorticks_on()
-
+    scope0.CollectData()
+    
     def animate(i):
         ax.clear()
-        length = 4096
-        scope0.CollectData()
+        length = 300#4096#500 
+        #scope0.CollectData()
+        scope0.read_data_from_scope(data_points=4096)
         data = scope0.GetDataFromDSO()
         tIndex = data[5].value
         ytrans = transforms.blended_transform_factory(ax.get_yticklabels()[0].get_transform(), ax.transData)
@@ -66,7 +68,7 @@ if __name__ == "__main__":
         #vpd = conversions.VOLTS_PER_DIV[12]
         #vpd_str = utils.format_number(vpd * (10 ** 1), "V")
         
-        ax.plot(data[4][tIndex:tIndex + length], data[0][tIndex:tIndex + length], color=conversions.CHANNEL_COLOUR[0]) #, label=f"Ch2: {vpd_str}")
+        #######ax.plot(data[4][tIndex:tIndex + length], data[0][tIndex:tIndex + length], color=conversions.CHANNEL_COLOUR[0]) #, label=f"Ch2: {vpd_str}")
         #ax.axhline(y=-20, color=col, lw=0.8, ls="-")
     
         #vpd = conversions.VOLTS_PER_DIV[12]
