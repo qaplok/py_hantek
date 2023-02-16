@@ -53,7 +53,7 @@ VOLTS_PER_DIV = {
 
 CHANNEL_COLOUR = {
     0: "#f8f601",
-    1: "#00f401",
+    1: "blue",
     2: "red",
     3: "green",
 }
