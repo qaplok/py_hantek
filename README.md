@@ -1,4 +1,6 @@
 !!!-=NOT WORK, under maintenance=-!!!
+Use x64 SDK - Need to try find x64 driver...tomorow.
+
 # py_hantek
 Small programm migrate from Delphi pascal to python.
 Just a part of my big automation project.
