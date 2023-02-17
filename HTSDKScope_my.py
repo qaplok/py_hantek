@@ -11,7 +11,7 @@ import time
 
 # Set the directory for your HantekScope DLL here.
 marchdll_file = os.path.join("Dll_x64", "HTHardDll.dll")
-marchdll_file_graph = os.path.join("Dll_x64", "HTDisplayDll.dll")
+#marchdll_file_graph = os.path.join("Dll_x32", "HTDisplayDll.dll")
 
 class Oscilloscope(object):
     def __init__(self, scopeid=0):  # Set up our scope. The scope id is for each scope attached to the system.
@@ -19,78 +19,82 @@ class Oscilloscope(object):
         if os.name != 'nt':
             raise StandardError('Hantek SDK Oscilloscope wrapper only supports windows!')
 
-        # self.marchdll = ctypes.CDLL(marchdll_file) #WinDLL(marchdll_file)
+        #self.marchdll = WinDLL(marchdll_file)
         self.marchdll = ctypes.CDLL(marchdll_file) #WinDLL(marchdll_file)
-        self.marchdll_graph = ctypes.CDLL(marchdll_file_graph)
+        #self.marchdll_graph = ctypes.CDLL(marchdll_file_graph)
 
         self.scopeid = c_ushort(scopeid)
         self.scop_id = np.array(self.scopeid, ctypes.c_ushort)
         
-        self.LeverPos = [0, -50, 0, 50]
+        self.LeverPos = [c_short(0), c_short(40), c_short(80), c_short(120)]
+        self.CHVoltDIV = [c_short(9), c_short(9), c_short(9), c_short(9)]
+        self.CHSet = c_ulong(14)
+        self.TimeDIV = c_short(21)  #6-2V/div , 21- 10V/div
+        self.YTFormat = c_short(0) #0-normal, 1-scan, 2-roll
+        self.TriggerSource = c_short(0)
         
-        self.TimeDIV = 21  #6-2V/div , 21- 10V/div
-        self.YTFormat = c_int16(0) #0-normal, 1-scan, 2-roll
+        class STRUCT_StControl(Structure):
+            _fields_ = [("nCHSet", c_ulong),
+                    ("nTimeDiv", c_short),
+                    ("nTriggerSource", c_short),
+                    ("nHTriggerPos", c_short),
+                    ("nVTriggerPos", c_short),
+                    ("nTriggerSlope", c_short),
+                    ("nBufferLen", c_ulong),
+                    ("nReadDataLen", c_ulong),
+                    ("nAlreadyReadLen", c_ulong),
+                    ("nALT", c_short)]
 
-        class STRUCT_Control(Structure):
-            _fields_ = [("nCHSet", c_int16),
-                    ("nTimeDiv", c_int16),
-                    ("nTriggerSource", c_int16),
-                    ("nHTriggerPos", c_int16),
-                    ("nVTriggerPos", c_int16),
-                    ("nTriggerSlope", c_int16),
-                    ("nBufferLen", c_int32),
-                    ("nReadDataLen", c_int32),
-                    ("nAlreadyReadLen", c_int32),
-                    ("nALT", c_int16)]
-        self.stControl = STRUCT_Control()
-        self.stControl.nCHSet = 15
+        self.stControl = STRUCT_StControl()
+
+        self.stControl.nCHSet = self.CHSet
         self.stControl.nTimeDiv = self.TimeDIV
-        self.stControl.nTriggerSource = 0
-        self.stControl.nHTriggerPos = 0 
-        self.stControl.nVTriggerPos = self.LeverPos[0]
-        self.stControl.nTriggerSlope = 0
-        self.stControl.nBufferLen = 4096
-        self.stControl.nReadDataLen = 4096
-        self.stControl.nAlreadyReadLen = 0
-        self.stControl.nALT = 0
+        self.stControl.nTriggerSource = self.TriggerSource#3
+        self.stControl.nHTriggerPos = c_short(0) 
+        self.stControl.nVTriggerPos = c_short(0)
+        self.stControl.nTriggerSlope = c_short(0)
+        self.stControl.nBufferLen = c_ulong(4096)
+        self.stControl.nReadDataLen = c_ulong(4096)
+        self.stControl.nAlreadyReadLen = c_ulong(0)
+        self.stControl.nALT = c_short(0)
         
         self.nTriggerCouple = 1  # 0-DC, 1-AC, 2-LowFreq, 3-HighFreq
-        self.DisLen = 4096; 
+        self.DisLen = 2500; 
         self.StartNew = True
       
         class STRUCT_RelayControl(Structure):
-            _fields_ = [("bCHEnable", c_int32 * 4),
-                        ("nCHVoltDIV", c_int16 * 4),
-                        ("nCHCoupling", c_int32 * 4),
-                        ("bCHBWLimit", c_int16 * 4),
-                        ("nTrigSource", c_int16),
-                        ("bTrigFilt", c_int32),
-                        ("nALT", c_int16)]
+            _fields_ = [("bCHEnable", c_ulong * 4),
+                        ("nCHVoltDIV", c_short * 4),
+                        ("nCHCoupling", c_ulong * 4),
+                        ("bCHBWLimit", c_short * 4),
+                        ("nTrigSource", c_short),
+                        ("bTrigFilt", c_ulong),
+                        ("nALT", c_short)]
                         
         self.rcRelayControl = STRUCT_RelayControl()
-        for i in range(0,4):
-            self.rcRelayControl.bCHEnable[i] = 1
-            self.rcRelayControl.nCHVoltDIV[i] = 9
-            self.rcRelayControl.nCHCoupling[i] = 0 
-            self.rcRelayControl.bCHBWLimit[i] = 0
-        self.rcRelayControl.nTrigSource = self.stControl.nTriggerSource
-        self.rcRelayControl.bTrigFilt = 0
-        self.rcRelayControl.nALT = 0
         
-        self.TriggerMode = 0 #0-edge, 1-pulse, 2-video
-        self.TriggerSlope = self.stControl.nALT #0-increasing slop, 1-decreasing slope
+        for i in range(0,4):
+            self.rcRelayControl.bCHEnable[i] = c_ulong(1)
+            self.rcRelayControl.nCHVoltDIV[i] = c_short(9)
+            self.rcRelayControl.nCHCoupling[i] = c_ulong(0) 
+            self.rcRelayControl.bCHBWLimit[i] = c_short(0)
+        
+        self.rcRelayControl.nTrigSource = c_short(0)
+        self.rcRelayControl.bTrigFilt = c_ulong(1)
+        self.rcRelayControl.nALT = c_short(0)
+        
+        self.TriggerMode = c_short(0) #0-edge, 1-pulse, 2-video
+        self.TriggerSlope = c_short(0) #0-increasing slop, 1-decreasing slope
 
-        self.TriggerSweep = 0
-        self.ReadOK = 0
+        self.TriggerSweep = c_short(0)
         self.StartNew = True
-        self.ForceTriggerCnt = 0
-        self.Collect = 1
+            
         self.CH1SrcData = (c_short * 4096)()
         self.CH2SrcData = (c_short * 4096)()
         self.CH3SrcData = (c_short * 4096)()
         self.CH4SrcData = (c_short * 4096)()   
         
-        self.cal_data = None
+        
 
     def is_attached(self):
         """
@@ -122,7 +126,7 @@ class Oscilloscope(object):
             return False
 
     def HTADCCHModGain(self):
-        retval = self.marchdll.dsoHTADCCHModGain(0, c_int16(1))
+        retval = self.marchdll.dsoHTADCCHModGain(0, c_short(4)) #4
         if not retval:
             return False
         elif retval == 1:
@@ -144,7 +148,7 @@ class Oscilloscope(object):
             return False
 
     def HTSetCHAndTrigger(self):
-        retval = self.marchdll.dsoHTSetCHAndTrigger(0, byref(self.rcRelayControl), byref(c_int16(self.stControl.nTimeDiv)))
+        retval = self.marchdll.dsoHTSetCHAndTrigger(0, byref(self.rcRelayControl), byref(self.TimeDIV))
         if not retval:
             return False
         elif retval == 1:
@@ -155,7 +159,7 @@ class Oscilloscope(object):
             return False
 
     def HTSetRamAndTrigerControl(self):
-        retval = self.marchdll.dsoHTSetRamAndTrigerControl(0, byref(c_int16(self.stControl.nTimeDiv)), byref(c_int16(self.stControl.nCHSet)), byref(c_int16(self.stControl.nTriggerSource)), byref(c_int16(0)))
+        retval = self.marchdll.dsoHTSetRamAndTrigerControl(0, byref(c_short(21)), byref(self.CHSet), byref(self.TriggerSource), byref(c_short(0)))
         if not retval:
             return False
         elif retval == 1:
@@ -167,8 +171,9 @@ class Oscilloscope(object):
     
     def HTSetCHPos(self):
         for i in range(0,4):
-            retval = self.marchdll.dsoHTSetCHPos(0, c_int16(self.rcRelayControl.nCHVoltDIV[i]), c_int32(self.LeverPos[i]), c_int16(i), c_int16(4))
-        
+            #retval = self.marchdll.dsoHTSetCHPos(0, byref(self.CHVoltDIV[i]), c_int16(self.LeverPos[i]), c_int16(i), c_int16(4))
+            retval = self.marchdll.dsoHTSetCHPos(0, self.CHVoltDIV[i], self.LeverPos[i], c_short(i), c_short(4))
+
         if not retval:
             return False
         elif    retval == 1:
@@ -179,7 +184,7 @@ class Oscilloscope(object):
             return False
         
     def HTSetVTriggerLevel(self):
-        retval = self.marchdll.dsoHTSetVTriggerLevel(0, byref(c_int16(self.LeverPos[0])), byref(c_int16(4)))
+        retval = self.marchdll.dsoHTSetVTriggerLevel(0, byref(c_short(0)), byref(c_short(4)))
         if not retval:
             return False
         elif retval == 1:
@@ -191,7 +196,7 @@ class Oscilloscope(object):
             
     def HTSetTrigerMode(self):
         if (self.TriggerMode == 0):
-            retval = self.marchdll.dsoHTSetTrigerMode(0, byref(c_int16(self.TriggerMode)), byref(c_int16(self.stControl.nTriggerSlope)), byref(c_int16(self.nTriggerCouple)))
+            retval = self.marchdll.dsoHTSetTrigerMode(0, byref(self.TriggerMode), byref(self.TriggerSlope), byref(c_short(1)))
             if not retval:
                 return False
             elif retval == 1:
@@ -206,7 +211,7 @@ class Oscilloscope(object):
     #@staticmethod
     def CollectData(self):
         if (self.StartNew): 
-            retval = self.marchdll.dsoHTStartCollectData(0, byref(c_int16(1)))
+            retval = self.marchdll.dsoHTStartCollectData(0, byref(c_short(1)))
             self.StartNew = False
             if not retval:
                 print("FALSE. HTSetTrigerMode")
@@ -230,9 +235,7 @@ class Oscilloscope(object):
             to grab. Returns a tuple with channel 1 data, channel 2 data, time since capture init, and a trigger
             index on success, and None on failure.
         """
-        #if self.cal_data == None:
-         #   return None
-        #else:
+        
         '''
         data_ch1 = c_double(0)
         data_ch2 = c_double(0)
@@ -249,9 +252,9 @@ class Oscilloscope(object):
         
         #stControl = {'nCHSet': 7, 'nTimeDiv': 21, 'nTriggerSource': 0, 'nHTriggerPos': 0, 'nVTriggerPos': 0, 'nTriggerSlope': 0, 'nBufferLen': 4096,
         #'nReadDataLen': 4096, 'nAlreadyReadLen': 0, 'nALT': 0}
-        
+        #self.scopeid
     
-        retval = self.marchdll.dsoHTGetData(self.scopeid, byref(data_ch1), byref(data_ch2), byref(data_ch3), byref(data_ch4), byref(self.stControl))
+        retval = self.marchdll.dsoHTGetData(0, byref(data_ch1), byref(data_ch2), byref(data_ch3), byref(data_ch4), byref(self.stControl))
         
         #retval = self.marchdll.dsoHTGetData(0, byref(data_ch1), byref(data_ch2), byref(data_ch3), byref(data_ch4), self.stControl.ctypes)
         
@@ -261,14 +264,14 @@ class Oscilloscope(object):
             return None
         else:
             for i in range (0, 4096):
-                self.CH1SrcData[i] = data_ch1[i] - (255 - self.LeverPos[0])
-                self.CH2SrcData[i] = data_ch2[i] - (255 - self.LeverPos[1])
-                self.CH3SrcData[i] = data_ch3[i] - (255 - self.LeverPos[2])
-                self.CH4SrcData[i] = data_ch4[i] - (255 - self.LeverPos[3])
+                self.CH1SrcData[i] = data_ch1[i] - (255 - 0)
+                self.CH2SrcData[i] = data_ch2[i] - (255 - 40)
+                self.CH3SrcData[i] = data_ch3[i] - (255 - 80)
+                self.CH4SrcData[i] = data_ch4[i] - (255 - 120) # self.LeverPos[3])
 
     def GetDataFromDSO(self):
         t_index = c_ulong(0)
-        koef =0.96
+        koef =5 #0.96
         PPromMin = self.CH3SrcData[0]
         PPromMax = PPromMin
         for i in range (0, 4096):
@@ -279,10 +282,12 @@ class Oscilloscope(object):
         P3Min = PPromMin
         P3Max = PPromMax
         if P3Min < 0:
-            meas_vpp3 = ((P3Max + abs(P3Min)) / koef) / 2
+            meas_vpp3 = (P3Max + abs(P3Min)) 
+            
         else:
-            meas_vpp3 =((P3Max - P3Min) / koef) / 2
-        
+            meas_vpp3 =(P3Max - P3Min) 
+        meas_vpp3 = 0.00496245*meas_vpp3*meas_vpp3 + 0.28172529*meas_vpp3
+
         PPromMin = self.CH2SrcData[0]
         PPromMax = PPromMin
         for i in range (0, 4096):
@@ -293,10 +298,10 @@ class Oscilloscope(object):
         P2Min = PPromMin
         P2Max = PPromMax
         if P2Min < 0:
-            meas_vpp2 = ((P2Max + abs(P2Min)) / koef) / 2
+            meas_vpp2 = (P2Max + abs(P2Min))
         else:
-            meas_vpp2 =((P2Max - P2Min) / koef) / 2
-
+            meas_vpp2 =(P2Max - P2Min)
+        meas_vpp2 = 0.00496245*meas_vpp2*meas_vpp2 + 0.28172529*meas_vpp2
         PPromMin = self.CH4SrcData[0]
         PPromMax = PPromMin
         for i in range (0, 4096):
@@ -307,10 +312,10 @@ class Oscilloscope(object):
         P4Min = PPromMin
         P4Max = PPromMax
         if P4Min < 0:
-            meas_vpp4 = ((P4Max + abs(P4Min)) / koef) / 2
+            meas_vpp4 = (P4Max + abs(P4Min))
         else:
-            meas_vpp4 =((P4Max - P4Min) / koef) / 2
-
+            meas_vpp4 =(P4Max - P4Min) 
+        meas_vpp4 = 0.00496245*meas_vpp4*meas_vpp4 + 0.28172529*meas_vpp4
         return self.CH1SrcData, self.CH2SrcData, self.CH3SrcData, self.CH4SrcData, [j / 1e6 for j in range(0, 4097)], t_index, meas_vpp2, meas_vpp3, meas_vpp4
 
   

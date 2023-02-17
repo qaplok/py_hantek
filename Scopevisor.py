@@ -14,7 +14,7 @@ from PIL import Image
 import ctypes
 import os
 import matplotlib.transforms as transforms
-import conversions, utils
+import conversions
 import matplotlib.ticker as ticker
 
 if __name__ == "__main__":
@@ -28,14 +28,14 @@ if __name__ == "__main__":
     scope0.initHard()
     scope0.HTADCCHModGain()
     scope0.HTSetSampleRate()
-    scope0.HTSetCHAndTrigger()
+    scope0.HTSetCHAndTrigger() #---------sound click relay
     scope0.HTSetRamAndTrigerControl()
     scope0.HTSetCHPos()
     scope0.HTSetVTriggerLevel()
     scope0.HTSetTrigerMode()
 
     timebase = conversions.TIMEBASE[21]
-    timebase_str = utils.format_number(timebase, "s")
+    
     seconds_per_sample = 1 / 10
     time = np.arange(0, float(10))
     time *= seconds_per_sample
@@ -43,7 +43,7 @@ if __name__ == "__main__":
     # Darkmode to simulate oscilloscope
     plt.style.use('dark_background')
     fig, ax = plt.subplots()
-
+    fig.canvas.toolbar_visible = False
     # Setup the graph like an oscilloscope graticule
     ax.set_ylim(-250, 250)
     ax.xaxis.set_major_locator(ticker.MultipleLocator(timebase))
@@ -64,27 +64,27 @@ if __name__ == "__main__":
         data = scope0.GetDataFromDSO()
         tIndex = data[5].value
         ytrans = transforms.blended_transform_factory(ax.get_yticklabels()[0].get_transform(), ax.transData)
-        vpp2 = data[6]
+        vpp2 = data[6] #round(
         vpp3 = data[7]
         vpp4 = data[8]
         #vpd = conversions.VOLTS_PER_DIV[12]
         #vpd_str = utils.format_number(vpd * (10 ** 1), "V")
         
-        #######ax.plot(data[4][tIndex:tIndex + length], data[0][tIndex:tIndex + length], color=conversions.CHANNEL_COLOUR[0]) #, label=f"Ch2: {vpd_str}")
+        ax.plot(data[4][tIndex:tIndex + length], data[0][tIndex:tIndex + length], color=conversions.CHANNEL_COLOUR[0]) #, label=f"Ch2: {vpd_str}")
         #ax.axhline(y=-20, color=col, lw=0.8, ls="-")
     
         #vpd = conversions.VOLTS_PER_DIV[12]
-        vpd_str2 = utils.format_number(vpp2 , "A")
+        vpd_str2 = format(vpp2, '.2f')
         
         ax.plot(data[4][tIndex:tIndex + length], data[1][tIndex:tIndex + length], color=conversions.CHANNEL_COLOUR[1], label=f"Ch2: {vpd_str2}")
         #ax.axhline(y=20, color=col, lw=0.8, ls="-")
 
         #vpd = conversions.VOLTS_PER_DIV[12]
-        vpd_str3 = utils.format_number(vpp3, "A")
+        vpd_str3 = format(vpp3, '.2f')
         
         ax.plot(data[4][tIndex:tIndex + length], data[2][tIndex:tIndex + length], color=conversions.CHANNEL_COLOUR[2], label=f"Ch3: {vpd_str3}")
         #ax.axhline(y=40, color=col, lw=0.8, ls="-")
-        vpd_str4 = utils.format_number(vpp4 , "A")
+        vpd_str4 = format(vpp4, '.2f')
         ax.plot(data[4][tIndex:tIndex + length], data[3][tIndex:tIndex + length], color=conversions.CHANNEL_COLOUR[3], label=f"Ch4: {vpd_str4}")
         # Trigger line
         #trigger_level = 0
@@ -94,10 +94,8 @@ if __name__ == "__main__":
         #ax.text(0, trigger_level, "T", color=col, transform=ytrans, ha="right", va="center")
 
         # Timebase Text
-        samples_per_second = utils.format_number(1)
-        sampling_depth = utils.format_number(1)
-        plt.title(f"Timebase: {timebase_str}, {samples_per_second}Sa/s, {sampling_depth}Pt")
-        ax.legend()
+        #plt.title(f"Timebase: {timebase_str}, {samples_per_second}Sa/s, {sampling_depth}Pt")
+        ax.legend(loc="lower right")
         
 
     ani = animation.FuncAnimation(fig, animate, interval=10)

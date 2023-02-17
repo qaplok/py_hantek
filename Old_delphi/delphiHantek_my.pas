@@ -271,10 +271,8 @@ begin
   Result := dsoHTADCCHModGain(DeviceIndex, 4); // ЙиЦГДЈДв¶Л·щ¶ИРЮХэ
   Result := dsoHTSetSampleRate(DeviceIndex, YTFormat, rcRelayControl,
     stControl); // ЙиЦГІЙСщВК
-  Result := dsoHTSetCHAndTrigger(DeviceIndex, rcRelayControl,
-    stControl.nTimeDiv); // ЙиЦГНЁµАїЄ№ШєНµзС№µµО»
-  Result := dsoHTSetRamAndTrigerControl(DeviceIndex, (stControl.nTimeDiv),
-    (stControl.nCHSet), (stControl.nTriggerSource), 0); // ЙиЦГґҐ·ўФґ
+  Result := dsoHTSetCHAndTrigger(DeviceIndex, rcRelayControl, stControl.nTimeDiv); // ЙиЦГНЁµАїЄ№ШєНµзС№µµО»
+  Result := dsoHTSetRamAndTrigerControl(DeviceIndex, (stControl.nTimeDiv),  (stControl.nCHSet), (stControl.nTriggerSource), 0); // ЙиЦГґҐ·ўФґ
   for i := 0 to 3 do
   begin
     Result := dsoHTSetCHPos(DeviceIndex, rcRelayControl.nCHVoltDIV[i],
@@ -285,8 +283,7 @@ begin
   // ЙиЦГґҐ·ўґ№Ц±О»ЦГУлНЁµА1ПаН¬
   if TriggerMode = 0 then
   begin // EDGE
-    Result := dsoHTSetTrigerMode(DeviceIndex, TriggerMode,
-      stControl.nTriggerSlope, 0); // Из№ыКЗ±ЯСШґҐ·ўµчУГґЛєЇКэ
+    Result := dsoHTSetTrigerMode(DeviceIndex, TriggerMode, stControl.nTriggerSlope, 0); // Из№ыКЗ±ЯСШґҐ·ўµчУГґЛєЇКэ
   end;
 
 end;
