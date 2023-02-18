@@ -10,11 +10,11 @@ import numpy as np
 import time
 
 # Set the directory for your HantekScope DLL here.
-marchdll_file = os.path.join("Dll_x64", "HTHardDll.dll")
+marchdll_file = os.path.join("Dll_x32", "HTHardDll.dll")
 #marchdll_file_graph = os.path.join("Dll_x32", "HTDisplayDll.dll")
 
 class Oscilloscope(object):
-    def __init__(self, scopeid=0):  # Set up our scope. The scope id is for each scope attached to the system.
+    def __init__(self, scopeid=0, CHSet=0):  # Set up our scope. The scope id is for each scope attached to the system.
         # No Linux support...yet
         if os.name != 'nt':
             raise StandardError('Hantek SDK Oscilloscope wrapper only supports windows!')
@@ -26,9 +26,11 @@ class Oscilloscope(object):
         self.scopeid = c_ushort(scopeid)
         self.scop_id = np.array(self.scopeid, ctypes.c_ushort)
         
-        self.LeverPos = [c_short(0), c_short(40), c_short(80), c_short(120)]
-        self.CHVoltDIV = [c_short(9), c_short(9), c_short(9), c_short(9)]
-        self.CHSet = c_ulong(14)
+        #self.LeverPos = [c_short(0), c_short(40), c_short(80), c_short(120)]
+        self.LeverPos = [0, 40, 80, 120]
+        #self.CHVoltDIV = [c_short(9), c_short(9), c_short(9), c_short(9)]
+        self.CHVoltDIV = [9, 9, 9, 9]
+        self.CHSet = c_ulong(14) ##############################################################################!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         self.TimeDIV = c_short(21)  #6-2V/div , 21- 10V/div
         self.YTFormat = c_short(0) #0-normal, 1-scan, 2-roll
         self.TriggerSource = c_short(0)
@@ -159,7 +161,7 @@ class Oscilloscope(object):
             return False
 
     def HTSetRamAndTrigerControl(self):
-        retval = self.marchdll.dsoHTSetRamAndTrigerControl(0, byref(c_short(21)), byref(self.CHSet), byref(self.TriggerSource), byref(c_short(0)))
+        retval = self.marchdll.dsoHTSetRamAndTrigerControl(0, byref(c_short(self.stControl.nTimeDiv)), byref(self.CHSet), byref(self.TriggerSource), byref(c_short(0)))
         if not retval:
             return False
         elif retval == 1:
@@ -171,8 +173,7 @@ class Oscilloscope(object):
     
     def HTSetCHPos(self):
         for i in range(0,4):
-            #retval = self.marchdll.dsoHTSetCHPos(0, byref(self.CHVoltDIV[i]), c_int16(self.LeverPos[i]), c_int16(i), c_int16(4))
-            retval = self.marchdll.dsoHTSetCHPos(0, self.CHVoltDIV[i], self.LeverPos[i], c_short(i), c_short(4))
+            retval = self.marchdll.dsoHTSetCHPos(0, self.CHVoltDIV[i], self.LeverPos[i], i, 4)
 
         if not retval:
             return False
